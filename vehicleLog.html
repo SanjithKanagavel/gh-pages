@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Vehicle GPS Log</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDRM4sMG7P0Y857_oTwDYJsWmRr02zELCk"></script>
+    <script>
+      var jsonData;
+      var map;
+      var lookup = [];
+      var infowindow;
+        function initialize() {
+        $.ajax({
+          type: "GET",
+          url: "https://api.mediatek.com/mcs/v2/devices/Df7002I0/datachannels/GPS/datapoints?limit=1000",
+          headers: { deviceKey: "Tsu5jHBXitmQqlN1" },
+          contentType: "application/json"
+        })
+        .done(function(data){
+            console.log(data);
+            jsonData = data;
+            jQuery.each( jsonData.dataChannels[0].dataPoints , function( key, value ) {
+                plotData(value.values.latitude,value.values.longitude,value.recordedAt,key);
+                console.log('ploting');
+              }
+            );
+        });
+      }
+      function plotData(lat,lon,date,index)
+      {
+        var myOptions = {center: new google.maps.LatLng(lat, lon),
+           zoom: 12,
+           mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        if(!map)
+        {
+          map = new google.maps.Map(document.getElementById("map_canvas"),myOptions);
+        }
+        var marker = new google.maps.Marker({
+          position: new google.maps.LatLng(lat, lon),
+          map: map,
+        });
+        infowindow = new google.maps.InfoWindow({
+          //content: '<center><h1>'+index+'</h1></center><br>'+new Date(date).toString()
+          content: '<center><h4>'+new Date(date).toString()+'</h4></center>'
+        });
+        marker.addListener('click', function() {
+          infowindow.open(map, marker);
+        });
+      }
+      function isLocationFree(lat,lon) {
+        for (var i = 0, l = lookup.length; i < l; i++) {
+          if (lookup[i][0] === lat && lookup[i][1] === lon) {
+            return false;
+          }
+        }
+        return true;
+      }
+    </script>
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
+  </head>
+  <body onload="initialize()">
+    <div id="map_canvas" style="width:100%; height:100%"></div>
+  </body>
+</html>
